@@ -40,8 +40,9 @@
                 {field: 'machine', title: '机器', minWidth: 80, align: 'center'},
                 {field: 'gpu', title: 'GPU', minWidth: 60, align: 'center'},
                 {field: 'used', title: '已用', minWidth: 80, align: 'center'},
-                {field: 'all', title: '总量', minWidth: 80, align: 'center'},
+                {field: 'all_mem', title: '总量', minWidth: 80, align: 'center'},
                 {field: 'tmp', title: '温度', minWidth: 60, align: 'center'},
+                {field: 'pids', title: '温度', minWidth: 60, align: 'center'},
                 {field: 'update_time', title: '最后更新时间', minWidth: 180, align: 'center'},
                 {field: 'ip', title: '内网IP', minWidth: 130, align: 'center'},
                 
@@ -79,8 +80,8 @@
         var data = res.data;
         var mergeIndex = 0;//定位需要添加合并属性的行数
         var mark = 1; //这里涉及到简单的运算，mark是计算每次需要合并的格子数
-        var columsName = ['machine', 'ip'];//需要合并的列名称
-        var columsIndex = [0, 6];//需要合并的列索引值
+        var columsName = ['machine', 'pids', 'update_time', 'ip'];//需要合并的列名称
+        var columsIndex = [0, 5, 6, 7];//需要合并的列索引值
 
         for (var k = 0; k < columsName.length; k++) { //这里循环所有要合并的列
             var trArr = $(".layui-table-body>.layui-table").find("tr");//所有行
