@@ -56,7 +56,7 @@
                 for (var i = 0; i < trs.length; i++) {
                     nowtime = new Date().getTime();
                     //'2024-06-27 11:26:01' 这个字符串转成时间戳
-                    updatetime = new Date(trs[i].cells[5].innerText).getTime();
+                    updatetime = new Date(trs[i].cells[6].innerText).getTime();
                     console.log(nowtime - updatetime);
                     console.log(updatetime);
                     console.log(nowtime);
@@ -80,8 +80,8 @@
         var data = res.data;
         var mergeIndex = 0;//定位需要添加合并属性的行数
         var mark = 1; //这里涉及到简单的运算，mark是计算每次需要合并的格子数
-        var columsName = ['machine', 'pids', 'update_time', 'ip'];//需要合并的列名称
-        var columsIndex = [0, 5, 6, 7];//需要合并的列索引值
+        var columsName = ['machine', 'pids', 'ip'];//需要合并的列名称
+        var columsIndex = [0, 5, 7];//需要合并的列索引值
 
         for (var k = 0; k < columsName.length; k++) { //这里循环所有要合并的列
             var trArr = $(".layui-table-body>.layui-table").find("tr");//所有行
