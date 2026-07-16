@@ -1,121 +1,738 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <meta charset="utf-8">
-    <title>529服务器监控</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
-    <link href="https://cdn.jsdelivr.net/npm/layui@2.9.20/dist/css/layui.min.css" rel="stylesheet">
+
+<meta charset="utf-8">
+
+<title>529 GPU服务器监控</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<link href="https://cdn.jsdelivr.net/npm/layui@2.9.20/dist/css/layui.min.css" rel="stylesheet">
+
+
+<style>
+body{
+
+    background:#f5f6fa;
+
+}
+
+
+#server-list{
+
+    padding:8px;
+
+}
+
+
+
+/* 卡片 */
+
+.server-card{
+
+
+    height:170px;
+
+    border-radius:8px;
+
+    padding-bottom:28px;
+
+    overflow:hidden;
+
+    background:white;
+
+    box-shadow:0 1px 6px rgba(0,0,0,.12);
+
+}
+
+
+
+/* 在线 */
+
+.server-card.online{
+
+    border-left:4px solid #52c41a;
+
+}
+
+
+
+/* 离线 */
+
+.server-card.offline{
+
+    border-left:4px solid #999;
+
+}
+
+
+
+/*
+    离线整体灰化
+*/
+
+
+.server-card.offline .layui-card-header,
+.server-card.offline .layui-card-body,
+.server-card.offline .gpu-box,
+.server-card.offline .gpu-title,
+.server-card.offline .process,
+.server-card.offline .update-time,
+.server-card.offline .ip{
+
+    color:#999!important;
+
+}
+
+
+
+/* GPU背景灰 */
+
+.server-card.offline .gpu-box{
+
+    background:#eeeeee;
+
+}
+
+
+
+/* 显存条灰 */
+
+.server-card.offline .mem-inner{
+
+    background:#aaa;
+
+}
+
+
+
+/* 温度灰掉 */
+
+.server-card.offline .temp-normal,
+.server-card.offline .temp-warning,
+.server-card.offline .temp-danger{
+
+    color:#999!important;
+
+}
+
+
+
+
+/* 离线标识保持红色 */
+
+.server-card.offline .machine-status{
+
+    color:#ff4d4f!important;
+
+}
+
+
+
+
+.layui-card-header{
+
+
+    height:34px!important;
+
+    line-height:34px!important;
+
+    padding:0 8px!important;
+
+    font-size:14px!important;
+
+    font-weight:bold;
+
+}
+
+
+
+
+
+.machine-status{
+
+    float:right;
+
+}
+
+
+
+.online-text{
+
+    color:#52c41a;
+
+}
+
+
+.offline-text{
+
+    color:#ff4d4f;
+
+}
+
+
+
+
+.layui-card-body{
+
+
+    padding:6px 8px!important;
+
+    font-size:12px;
+
+}
+
+
+
+
+
+.update-time{
+
+
+    color:#999;
+
+    font-size:11px;
+
+    margin-bottom:4px;
+
+}
+
+
+
+
+.gpu-list{
+
+
+    display:grid;
+
+    grid-template-columns:repeat(2,1fr);
+
+    gap:4px;
+
+}
+
+
+
+
+.gpu-box{
+
+
+    background:#f7f7f7;
+
+    border-radius:4px;
+
+    padding:3px 5px;
+
+    height:52px;
+
+    overflow:hidden;
+
+    line-height:15px;
+
+
+}
+
+
+
+
+.gpu-title{
+
+
+    display:flex;
+
+    justify-content:space-between;
+
+    font-weight:bold;
+
+
+}
+
+
+
+
+.temp-normal{
+
+    color:#52c41a;
+
+}
+
+
+
+.temp-warning{
+
+    color:#ff9800;
+
+}
+
+
+
+.temp-danger{
+
+    color:red;
+
+}
+
+
+
+
+.mem-bar{
+
+
+    height:4px;
+
+    background:#ddd;
+
+    border-radius:5px;
+
+    overflow:hidden;
+
+
+}
+
+
+
+.mem-inner{
+
+
+    height:100%;
+
+    background:#409eff;
+
+
+}
+
+
+
+
+.process{
+
+
+    color:#666;
+
+    font-size:11px;
+
+    white-space:nowrap;
+
+    overflow:hidden;
+
+    text-overflow:ellipsis;
+
+
+}
+
+</style>
+
+
 </head>
+
+
 <body>
 
-<table class="layui-hide" id="ID-table-demo-parse"></table>
 
-<!-- 请勿在项目正式环境中引用该 layui.js 地址 -->
+
+<div class="layui-container-fluid">
+
+
+<div class="layui-row layui-col-space8" id="server-list">
+
+
+</div>
+
+
+</div>
+
+
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/layui@2.9.20/dist/layui.min.js"></script>
-<script src="jquery.js"></script>
+
+
+<script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.7.1/jquery.js"></script>
+
+
+
 <script>
-    layui.use('table', function () {
-        var table = layui.table;
 
-        // 渲染
-        table.render({
-            elem: '#ID-table-demo-parse',
-            url: 'https://server529.cvzoo.cn:8000/all_server',
-            page: true,
-            response: {
-                statusCode: 200 // 重新规定成功的状态码为 200，table 组件默认为 0
-            },
-            // 将原始数据解析成 table 组件所规定的数据格式
-            parseData: function (res) {
-                return {
-                    "code": 200, //解析接口状态
-                    "msg": "529-server", //解析提示文本
-                    "count": res.length, //解析数据长度
-                    "data": res //解析数据列表
-                };
-            },
-            cols: [[
-                // {field:'id', title:'ID'},
-                {field: 'machine', title: '机器', minWidth: 80, align: 'center'},
-                {field: 'gpu', title: 'GPU', minWidth: 60, align: 'center'},
-                {field: 'used', title: '已用', minWidth: 80, align: 'center'},
-                {field: 'all_mem', title: '总量', minWidth: 80, align: 'center'},
-                {field: 'tmp', title: '温度', minWidth: 60, align: 'center'},
-                {field: 'pids', title: '用户', minWidth: 180, align: 'center'},
-                {field: 'update_time', title: '最后更新时间', minWidth: 180, align: 'center'},
-                {field: 'ip', title: '内网IP', minWidth: 130, align: 'center'},
-                
-            ]],
-            page: false,
-            height: 'full-1',
-            done: function (res, curr, count) {
-                merge(res);
-                //按照time改变一行的背景颜色
-                var trs = document.getElementsByTagName("tr");
-                for (var i = 0; i < trs.length; i++) {
-                    nowtime = new Date().getTime();
-                    //'2024-06-27 11:26:01' 这个字符串转成时间戳
-                    updatetime = new Date(trs[i].cells[6].innerText).getTime();
-                    console.log(nowtime - updatetime);
-                    console.log(updatetime);
-                    console.log(nowtime);
-                    console.log(trs[i].cells[6].innerText);
-                    if (nowtime - updatetime > 66666) {
-                        trs[i].style.backgroundColor = ("#FFA5A5");
-                    }
-                }
-            }
-        });
 
-        setInterval(function () {
-            table.reloadData('ID-table-demo-parse', {
-                // 这里可以重新设置表格的配置项，如url等
-            });
-        }, 60000); // 60000毫秒等于一分钟
+
+const API =
+"https://server529.cvzoo.cn:8000/all_server";
+
+
+// 十分钟离线
+
+const OFFLINE_TIME =
+10*60*1000;
+
+
+
+
+loadServer();
+
+
+
+// 60秒刷新
+
+setInterval(function(){
+
+    loadServer();
+
+},60000);
+
+
+
+
+
+
+function loadServer(){
+
+
+    $.get(API,function(data){
+
+
+        render(data);
+
+
     });
 
 
-    function merge(res) {
-        var data = res.data;
-        var mergeIndex = 0;//定位需要添加合并属性的行数
-        var mark = 1; //这里涉及到简单的运算，mark是计算每次需要合并的格子数
-        var columsName = ['machine', 'ip'];//需要合并的列名称
-        var columsIndex = [0, 7];//需要合并的列索引值
+}
 
-        for (var k = 0; k < columsName.length; k++) { //这里循环所有要合并的列
-            var trArr = $(".layui-table-body>.layui-table").find("tr");//所有行
-            for (var i = 1; i < res.data.length; i++) { //这里循环表格当前的数据
-                var tdCurArr = trArr.eq(i).find("td").eq(columsIndex[k]);//获取当前行的当前列
-                var tdPreArr = trArr.eq(mergeIndex).find("td").eq(columsIndex[k]);//获取相同列的第一列
 
-                if (data[i][columsName[k]] === data[i - 1][columsName[k]]) { //后一行的值与前一行的值做比较，相同就需要合并
-                    mark += 1;
-                    tdPreArr.each(function () {//相同列的第一列增加rowspan属性
-                        $(this).attr("rowspan", mark);
-                    });
-                    tdCurArr.each(function () {//当前行隐藏
-                        $(this).css("display", "none");
-                    });
-                } else {
-                    mergeIndex = i;
-                    mark = 1;//一旦前后两行的值不一样了，那么需要合并的格子数mark就需要重新计算
-                }
-            }
-            mergeIndex = 0;
-            mark = 1;
-        }
+
+
+
+function render(data){
+
+
+
+let machines={};
+
+
+
+
+
+// 聚合机器
+
+data.forEach(item=>{
+
+
+    let key =
+    item.machine+"_"+item.ip;
+
+
+
+    if(!machines[key]){
+
+
+        machines[key]={
+
+            machine:item.machine,
+
+            ip:item.ip,
+
+            gpus:[]
+
+        };
+
+
     }
+
+
+
+    machines[key].gpus.push(item);
+
+
+
+});
+
+
+
+
+
+
+
+let html="";
+
+
+
+
+
+
+
+Object.values(machines).forEach(server=>{
+
+
+
+    let lastTime=0;
+
+
+
+    server.gpus.forEach(g=>{
+
+
+        let t =
+        new Date(
+            g.update_time.trim()
+        ).getTime();
+
+
+
+        if(t>lastTime){
+
+            lastTime=t;
+
+        }
+
+
+    });
+
+
+
+
+    let offline =
+    Date.now()-lastTime
+    >
+    OFFLINE_TIME;
+
+
+
+
+
+
+    let gpuHtml="";
+
+
+
+
+
+    server.gpus.forEach(gpu=>{
+
+
+        let percent =
+        Math.round(
+            gpu.used/gpu.all_mem*100
+        );
+
+
+
+        let tempClass="temp-normal";
+
+
+
+        if(gpu.tmp>=85){
+
+            tempClass="temp-danger";
+
+
+        }else if(gpu.tmp>=70){
+
+            tempClass="temp-warning";
+
+
+        }
+
+
+
+
+
+
+
+        gpuHtml+=`
+
+
+        <div class="gpu-box">
+
+
+            <div class="gpu-title">
+
+
+                <span>
+                GPU${gpu.gpu}
+                </span>
+
+
+                <span class="${tempClass}">
+                ${gpu.tmp}℃
+                </span>
+
+
+            </div>
+
+
+
+
+            <div>
+
+
+            ${percent}%
+
+
+            ${Math.round(gpu.used/1024)}
+            /
+            ${Math.round(gpu.all_mem/1024)}
+            G
+
+
+            </div>
+
+
+
+
+            <div class="mem-bar">
+
+
+                <div class="mem-inner"
+                style="width:${percent}%">
+
+                </div>
+
+
+            </div>
+
+
+
+
+
+            <div class="process">
+
+
+            进程:
+            ${gpu.pids || "-"}
+
+
+            </div>
+
+
+
+        </div>
+
+
+        `;
+
+
+
+    });
+
+
+
+
+
+
+
+
+    html+=`
+
+
+
+<div class="layui-col-xl2 layui-col-lg3 layui-col-md4 layui-col-sm6">
+
+
+<div class="layui-card server-card
+${offline?'offline':'online'}">
+
+
+
+
+
+<div class="layui-card-header">
+
+
+
+🖥 ${server.machine}.cvzoo.cn
+
+&nbsp;
+
+${server.ip}
+
+
+
+<span class="machine-status
+${offline?'offline-text':'online-text'}">
+
+
+${offline?'🔴':'🟢'}
+
+
+</span>
+
+
+
+</div>
+
+
+
+
+
+<div class="layui-card-body">
+
+
+
+
+
+<div class="update-time">
+
+
+更新时间:
+
+${new Date(lastTime).toLocaleString()}
+
+
+</div>
+
+
+
+
+
+
+<div class="gpu-list">
+
+
+${gpuHtml}
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+`;
+
+
+
+});
+
+
+
+
+$("#server-list").html(html);
+
+
+
+}
+
 
 
 </script>
 
-<style type="text/css">
-    .layui-table-cell{
-        height: 28.9px;
-        line-height: 20px;
-    }
-</style>
 
 </body>
+
 </html>
